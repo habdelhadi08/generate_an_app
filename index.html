@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grocery Shopping List</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Grocery Shopping List</h1>
+        <div class="input-group">
+            <input type="text" id="itemInput" placeholder="Add an item">
+            <button onclick="addItem()">Add</button>
+        </div>
+        <ul id="itemList"></ul>
+    </div>
+
+    <script>
+
+    const API_URL = '/items';
+
+    // Fetch and display items
+    async function fetchItems() {
+        const response = await fetch(API_URL);
+        const items = await response.json();
+        const itemList = document.getElementById("itemList");
+        itemList.innerHTML = '';
+        items.forEach(item => {
+            const listItem = document.createElement("li");
+            listItem.innerHTML = `
+                <input type="checkbox" ${item.checked ? 'checked' : ''} onclick="toggleItem(${item.id}, ${!item.checked})">
+                <span>${item.name}</span>
+                <button onclick="editItem(${item.id}, '${item.name}')">Edit</button>
+                <button onclick="deleteItem(${item.id})">Delete</button>
+            `;
+            itemList.appendChild(listItem);
+        });
+    }
+
+    // Add a new item
+    async function addItem() {
+        const itemInput = document.getElementById("itemInput");
+        const newItem = { name: itemInput.value };
+        await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newItem),
+        });
+        itemInput.value = '';
+        fetchItems();
+    }
+
+    // Toggle item's checked state
+    async function toggleItem(id, checked) {
+        await fetch(`${API_URL}/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ checked }),
+        });
+        fetchItems();
+    }
+
+    // Edit an item
+    async function editItem(id, currentName) {
+        const newName = prompt("Edit item name:", currentName);
+        if (newName) {
+            await fetch(`${API_URL}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newName }),
+            });
+            fetchItems();
+        }
+    }
+
+    // Delete an item
+    async function deleteItem(id) {
+        await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        fetchItems();
+    }
+
+    // Initialize
+    fetchItems();
+</script>
+
+
+</body>
+</html>
